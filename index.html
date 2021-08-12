@@ -1,0 +1,533 @@
+<!doctype html>
+<html>
+    <head>
+        <style>
+            html, body {
+
+                height: 100%;
+                display: flex;
+                background-color: #F4BC1C;
+                color : "fff";
+                flex-direction: column;
+            }
+            #root:not(.withChat) {
+                display: block;
+                width: 100%;
+                height: 100%;
+                margin-top: 20px;
+            }
+            #root.withChat {
+                display: grid;
+                grid-template-columns: 75% 25%;
+                height: 100%;
+                margin-top: 20px;
+            }
+
+            /* video section */
+
+            #username{
+                border-radius: 2px; 
+                border: 2px solid #009999;
+                padding: 20px;
+                height: 20px;
+                width: 240px;
+            }
+
+            #username_label{
+                font-size: 2em;
+
+            }
+
+
+            .container {
+                width: calc(100% - 5px);
+                height: 100%;
+                padding-right: 5px;
+                display: flex;
+                flex-wrap: wrap;
+                align-content: flex-start;
+            }
+            .participant {
+                margin-bottom: 10px;
+                margin-right: 5px;
+                display: grid;
+                grid-template-rows: auto 20px;
+            }
+            .participant div {
+                text-align: center;
+            }
+            .participant div video {
+                border: 1px solid black;
+            }
+            .participant div video:not(.trackZoomed) {
+                border-radius: 25px; 
+                border: 2px solid #009999;
+                padding: 20px;
+                width: 333px;
+                height: 250px;
+            }
+            .participant .label {
+                color: #ffffff;
+                background-color: #000000;
+                color
+                padding: 2px;
+            }
+            .participantZoomed {
+                border-radius: 25px; 
+                border: 2px solid #009999;
+                padding: 20px;
+                width: 100%;
+                height: calc(100% - 5px);
+                grid-template-rows: auto 30px;
+            }
+            .participantHidden {
+                display: none;
+            }
+            .trackZoomed {
+                border-radius: 25px; 
+                border: 2px solid #009999;
+                padding: 20px;
+                width: 100%;
+                height: 100%;
+            }
+            .participantZoomed div video:not(.trackZoomed) {
+                display: none;
+            }
+            .participantHidden div video {
+                display: none;
+            }
+            .participantHidden .label {
+                background-color: #000000;
+                color: #ffffff;
+                display: none;
+            }
+            .participantZoomed .label {
+                background-color: #000000;
+                color: #ffffff;
+                margin-top: 8px;
+            }
+
+            /* chat section */
+
+            #root.withChat #chat {
+                width: calc(100% - 10px);
+                display: grid;
+                grid-template-rows: auto 30px;
+                border-left: 1px solid black;
+                padding: 5px;
+            }
+            #root:not(withChat) #chat {
+                border-radius: 25px; 
+                border: 2px solid #009999;
+                padding: 20px;
+                display: none;
+            }
+            #chat #chat-scroll {
+                overflow: auto;
+            }
+            #chat #chat-content {
+                margin-top: 10px;
+                margin-bottom: 10px;
+                line-height: 1em;
+                max-height: 1px;
+            }
+            #voice{
+                border-radius: 10px; 
+                border: 2px solid #009999;
+                padding: 20px;
+                background-image: url('https://i.ibb.co/Vxv18hh/unmute-button.png');   
+                width: 60px;
+                height: 60px;
+            }
+            #join_leave{
+                border-radius: 10px; 
+                border: 2px solid #009999;
+                padding: 20px;
+                background-image: url('https://i.ibb.co/0Gzpwsz/Join-button.png');   
+                width: 60px;
+                height: 60px;
+            }
+            #share_screen{
+                border-radius: 10px; 
+                border: 2px solid #009999;
+                padding: 20px;
+                background-image: url('https://i.ibb.co/G5vmCJT/share-screen-button.png');   
+                width: 60px;
+                height: 60px;
+            }
+            #toggle_chat{
+                border-radius: 10px; 
+                border: 2px solid #009999;
+                padding: 20px;
+                background-image: url('https://i.ibb.co/1nShvRG/chat-button.png');   
+                width: 60px;
+                height: 60px;
+            }
+
+            #meeting_heading{
+                text-align: center;
+                font-family: Georgia, serif;
+            }
+
+            #chat-input{
+                border-radius: 25px; 
+                border: 2px solid #009999;
+                padding: 20px;
+            }
+        </style>
+        <title>Physical Education Exam</title>
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    </head>
+    <body>
+        <h1 id="meeting_heading" face = "Didot" size = "34px" color="#FF7A59">BE AN INNOVATOR ASSIGNMENT SUBMISSION</h1>
+        <form>
+            <label for="username" id = "username_label">Name: </label>
+            <input type="text" name=”username” id="username">
+            <button id="join_leave"></button>
+            <button id="share_screen" disabled></button>
+            <button id="toggle_chat" disabled></button>
+            <button id="voice" disabled></button> 
+        </form>
+        <p id="count">Disconnected.</p>
+        <p id = "token_text"> </p>
+        <div id="root">
+            <div id="container" class="container">
+                <div id="local" class="participant"><div></div><div class="label">Me</div></div>
+                <!-- more participants will be added dynamically here -->
+            </div>
+            <div id="chat">
+                <div id="chat-scroll">
+                    <div id="chat-content">
+                        <!-- chat content will be added dynamically here -->
+                    </div>
+                </div>
+                <input id="chat-input" type="text">
+            </div>
+        </div>
+
+
+
+        <script src="https://media.twiliocdn.com/sdk/js/video/releases/2.3.0/twilio-video.min.js"></script>
+        <script src="https://media.twiliocdn.com/sdk/js/conversations/releases/1.0.0/twilio-conversations.min.js"></script>
+        <script type="text/javascript">
+            const root = document.getElementById('root');
+            const usernameInput = document.getElementById('username');
+            const button = document.getElementById('join_leave');
+            const shareScreen = document.getElementById('share_screen');
+            const toggleChat = document.getElementById('toggle_chat');
+            const container = document.getElementById('container');
+            const count = document.getElementById('count');
+            const chatScroll = document.getElementById('chat-scroll');
+            const chatContent = document.getElementById('chat-content');
+            const chatInput = document.getElementById('chat-input');
+            const mute = document.getElementById('voice');
+            const token_text = document.getElementById('token_text');
+
+
+
+
+
+
+
+
+            const teachers = ["Krish Chauhan Teacher"]
+
+            let code = "Host"
+
+
+
+
+            let connected = false;
+            let room;
+            let chat;
+            let conv;
+            let screenTrack;
+            let muted = 1
+
+            function addLocalVideo() {
+                Twilio.Video.createLocalVideoTrack().then(track => {
+                    let video = document.getElementById('local').firstChild;
+                    let trackElement = track.attach();
+                    trackElement.addEventListener('click', () => { zoomTrack(trackElement); });
+                    video.appendChild(trackElement);
+                });
+            };
+
+            function connectButtonHandler(event) {
+                event.preventDefault();
+                if (!connected) {
+                    let username = usernameInput.value;
+                    if (!username) {
+                        alert('Enter your name before connecting');
+                        return;
+                    }
+
+                    button.disabled = true;
+                    button.style.width = "120px"
+                    button.style.backgroundImage = "url('https://i.ibb.co/h28wpLN/Connecting.png')";
+
+                    connect(username).then(() => {
+                        button.style.width = "60px"
+                        button.style.backgroundImage = "url('https://i.ibb.co/hXW5v1B/Leave-button.png')";
+                        button.disabled = false;
+
+                        if (username.includes(code) == true){
+                            chatInput.disabled = false
+                            shareScreen.disabled = false;
+                            username.replace(code , "")
+                        }
+                        else{
+                            chatInput.disabled = true
+                        }
+                    }).catch(() => {
+                        button.disabled = false;
+
+                    });
+                }
+                else {
+                    disconnect();
+                    connected = false;
+                    button.style.backgroundImage = "url('https://i.ibb.co/0Gzpwsz/Join-button.png')";
+                    shareScreen.disabled = true;
+                    mute.disabled = true;
+                }
+            };
+
+            function connect(username) {
+                let promise = new Promise((resolve, reject) => {
+                    // get a token from the back end
+                    let data;
+                    fetch('/login', {
+                        method: 'POST',
+                        body: JSON.stringify({'username': username})
+                    }).then(res => res.json()).then(_data => {
+                        // join video call
+                        data = _data;
+                        return Twilio.Video.connect(data.token);
+                    }).then(_room => {
+                        room = _room;
+                        room.participants.forEach(participantConnected);
+                        room.on('participantConnected', participantConnected);
+                        room.on('participantDisconnected', participantDisconnected);
+                        connected = true;
+                        mute.disabled = false;
+                        updateParticipantCount();
+                        connectChat(data.token, data.conversation_sid);
+                        resolve();
+                    }).catch(e => {
+                        console.log(e);
+                        reject();
+                    });
+                });
+                return promise;
+            };
+
+            function updateParticipantCount() {
+                if (!connected)
+                    count.innerHTML = 'Disconnected.';
+                else
+                    count.innerHTML = (room.participants.size + 1) + ' participants online.';
+            };
+
+            function participantConnected(participant) {
+                let participantDiv = document.createElement('div');
+                participantDiv.setAttribute('id', participant.sid);
+                participantDiv.setAttribute('class', 'participant');
+
+                let tracksDiv = document.createElement('div');
+                participantDiv.appendChild(tracksDiv);
+
+                let labelDiv = document.createElement('div');
+                labelDiv.setAttribute('class', 'label');
+                labelDiv.innerHTML = participant.identity;
+                participantDiv.appendChild(labelDiv);
+
+                container.appendChild(participantDiv);
+
+                participant.tracks.forEach(publication => {
+                    if (publication.isSubscribed)
+                        trackSubscribed(tracksDiv, publication.track);
+                });
+
+                room.localParticipant.audioTracks.forEach(publication => {
+                publication.track.enable();
+                });
+                room.localParticipant.audioTracks.forEach(publication => {
+                publication.track.disable();
+                });
+                participant.on('trackSubscribed', track => trackSubscribed(tracksDiv, track));
+                participant.on('trackUnsubscribed', trackUnsubscribed);
+
+                updateParticipantCount();
+            };
+
+            function participantDisconnected(participant) {
+                document.getElementById(participant.sid).remove();
+                updateParticipantCount();
+            };
+
+            function trackSubscribed(div, track) {
+                let trackElement = track.attach();
+                trackElement.addEventListener('click', () => { zoomTrack(trackElement); });
+                div.appendChild(trackElement);
+            };
+
+            function trackUnsubscribed(track) {
+                track.detach().forEach(element => {
+                    if (element.classList.contains('participantZoomed')) {
+                        zoomTrack(element);
+                    }
+                    element.remove()
+                });
+            };
+
+            function disconnect() {
+                room.disconnect();
+                if (chat) {
+                    chat.shutdown().then(() => {
+                        conv = null;
+                        chat = null;
+                    });
+                }
+                while (container.lastChild.id != 'local')
+                    container.removeChild(container.lastChild);
+                button.style.backgroundImage = "url('https://i.ibb.co/0Gzpwsz/Join-button.png')";
+                if (root.classList.contains('withChat')) {
+                    root.classList.remove('withChat');
+                }
+                toggleChat.disabled = true;
+                connected = false;
+                updateParticipantCount();
+            };
+
+            function shareScreenHandler() {
+                event.preventDefault();
+                if (!screenTrack) {
+                    navigator.mediaDevices.getDisplayMedia().then(stream => {
+                        screenTrack = new Twilio.Video.LocalVideoTrack(stream.getTracks()[0]);
+                        room.localParticipant.publishTrack(screenTrack);
+                        screenTrack.mediaStreamTrack.onended = () => { shareScreenHandler() };
+                        console.log(screenTrack);
+                        shareScreen.style.backgroundImage = "url('https://i.ibb.co/1GmRZCy/share-stop-button.png')";
+                    }).catch(() => {
+                        alert('Could not share the screen.')
+                    });
+                }
+                else {
+                    room.localParticipant.unpublishTrack(screenTrack);
+                    screenTrack.stop();
+                    screenTrack = null;
+                    shareScreen.style.backgroundImage = "url('https://i.ibb.co/G5vmCJT/share-screen-button.png')";
+
+                }
+            };
+
+            function zoomTrack(trackElement) {
+                if (!trackElement.classList.contains('trackZoomed')) {
+                    // zoom in
+                    container.childNodes.forEach(participant => {
+                        if (participant.classList && participant.classList.contains('participant')) {
+                            let zoomed = false;
+                            participant.childNodes[0].childNodes.forEach(track => {
+                                if (track === trackElement) {
+                                    track.classList.add('trackZoomed')
+                                    zoomed = true;
+                                }
+                            });
+                            if (zoomed) {
+                                participant.classList.add('participantZoomed');
+                            }
+                            else {
+                                participant.classList.add('participantHidden');
+                            }
+                        }
+                    });
+                }
+                else {
+                    // zoom out
+                    container.childNodes.forEach(participant => {
+                        if (participant.classList && participant.classList.contains('participant')) {
+                            participant.childNodes[0].childNodes.forEach(track => {
+                                if (track === trackElement) {
+                                    track.classList.remove('trackZoomed');
+                                }
+                            });
+                            participant.classList.remove('participantZoomed')
+                            participant.classList.remove('participantHidden')
+                        }
+                    });
+                }
+            };
+
+            function connectChat(token, conversationSid) {
+                return Twilio.Conversations.Client.create(token).then(_chat => {
+                    chat = _chat;
+                    return chat.getConversationBySid(conversationSid).then((_conv) => {
+                        conv = _conv;
+                        conv.on('messageAdded', (message) => {
+                            addMessageToChat(message.author, message.body);
+                        });
+                        return conv.getMessages().then((messages) => {
+                            toggleChat.disabled = false;
+                        });
+                    });
+                }).catch(e => {
+                    console.log(e);
+                });
+            };
+
+            function addMessageToChat(user, message) {
+                chatContent.innerHTML += `<p><b>${user}</b> ${message}`;
+                chatScroll.scrollTop = chatScroll.scrollHeight;
+            }
+
+            function toggleChatHandler() {
+                event.preventDefault();
+                if (root.classList.contains('withChat')) {
+                    root.classList.remove('withChat');
+                }
+                else {
+                    root.classList.add('withChat');
+                    chatScroll.scrollTop = chatScroll.scrollHeight;
+                }
+            };
+
+            function onChatInputKey(ev) {
+                if (ev.keyCode == 13) {
+                    conv.sendMessage(chatInput.value);
+                    chatInput.value = '';
+                }
+            };
+
+            function muting(){
+                event.preventDefault();
+                muted = (muted + 1) % 2
+                if (muted == 1){
+                    button.style.width = "60px"
+                    mute.style.backgroundImage = "url('https://i.ibb.co/Vxv18hh/unmute-button.png')";
+                    room.localParticipant.audioTracks.forEach(publication => {
+                    publication.track.disable();
+                    });
+                }
+                if (muted == 0){
+                    button.style.width = "60px"
+                    mute.style.backgroundImage = "url('https://i.ibb.co/Fg4ST42/mute-button.png')";
+                    room.localParticipant.audioTracks.forEach(publication => {
+                    publication.track.enable();
+                    screen});
+                }
+            }
+
+            addLocalVideo();
+            button.addEventListener('click', connectButtonHandler);
+            shareScreen.addEventListener('click', shareScreenHandler);
+            toggleChat.addEventListener('click', toggleChatHandler);
+            chatInput.addEventListener('keyup', onChatInputKey);
+            mute.addEventListener('click', muting)
+
+
+
+
+        </script>
+    </body>
+</html>
